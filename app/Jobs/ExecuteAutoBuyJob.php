@@ -6,6 +6,7 @@ use App\Http\Services\BybitService;
 use App\Models\Trade;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class ExecuteAutoBuyJob implements ShouldQueue
@@ -32,7 +33,9 @@ class ExecuteAutoBuyJob implements ShouldQueue
         // 1) Ставим маркет-покупку (qty = сумма в котировке)
         $orderLinkId = 'autobuy-'.Str::uuid()->toString();
         $resp = $bybit->placeSpotMarketBuy($this->symbol, $this->amountQuote, $orderLinkId);
-
+        if(isset($resp['retMsg']) && $resp['retMsg'] == 'Order value exceeded lower limit.') {
+            Log::channel('trade')->error('Слишком маленькая сделка в USDT для покупки');
+        }
         $orderId = (string)($resp['result']['orderId'] ?? '');
         // 2) Пуллим статус ордера/исполнения c backoff
         [$qtyBase, $avgPrice, $finalOrderId] = $this->waitForFills($bybit, $orderLinkId);
@@ -61,10 +64,11 @@ class ExecuteAutoBuyJob implements ShouldQueue
         ]);
 
         if ($finalOrderId === '' || $qtyBase <= 0) {
-            dd($trade->toArray());
+//            dd($trade->toArray());
 //            sleep(3);
 //            SyncTradeEntryJob::dispatchSync($trade->id);
-//            SyncTradeEntryJob::dispatch($trade->id)->delay(now()->addSeconds(5));
+            Log::channel('trade')->error('Start SyncTradeEntryJob');
+            SyncTradeEntryJob::dispatch($trade->id)->delay(now()->addSeconds(5));
         }
     }
 

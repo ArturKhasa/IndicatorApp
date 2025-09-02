@@ -47,6 +47,11 @@ class TradeMonitorJob implements ShouldQueue
             $uPnL = ($last - (float)$t->price_entry) * (float)$t->qty_base;
             $uPct = ($last - (float)$t->price_entry) / (float)$t->price_entry * 100;
 
+            // не дергаем LLM, если |PnL%| < 0.1% и далеко от SL/TP
+            $unpnlPct = (($last / $t->price_entry) - 1) * 100;
+            if (abs($unpnlPct) < 0.1) {
+                return;
+            }
             // Схема решения от ChatGPT
             $schema = [
                 'type' => 'object',
@@ -85,7 +90,7 @@ class TradeMonitorJob implements ShouldQueue
             $action = $json['action'] ?? 'hold';
             $conf   = (float)($json['confidence'] ?? 0);
 
-            if ($action === 'sell' && $conf >= $this->minConfidence) {
+            if ($action === 'sell') {
                 // Готовим market sell на ВСЮ базовую позицию
                 $orderLinkId = 'autosell-'.Str::uuid()->toString();
 

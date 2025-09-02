@@ -28,7 +28,7 @@ class TradeDispatcher extends Command
      */
     public function handle(BybitService $bybitService)
     {
-        $coins = $bybitService->getTopByVolume(100);
+        $coins = $bybitService->getTopByVolume(50);
         $trades = Trade::query()->where('status', 'open')->pluck('symbol')->toArray();
 
         $diff = array_diff($coins, $trades);

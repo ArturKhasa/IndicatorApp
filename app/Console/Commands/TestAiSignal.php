@@ -30,14 +30,6 @@ class TestAiSignal extends Command
      */
     public function handle(BybitService $bybitService)
     {
-//        TradeMonitorJob::dispatchSync();
-        $coins = $bybitService->getTopByVolume(100);
-        $trades = Trade::query()->where('status', 'open')->pluck('symbol')->toArray();
-
-        $diff = array_diff($coins, $trades);
-
-        foreach ($diff as $coin) {
-            BuildFeaturesJob::dispatch($coin);
-        }
+//        ExecuteAutoBuyJob::dispatchSync('RATSUSDT', '5.0', 'Тестовая');
     }
 }
