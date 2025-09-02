@@ -75,7 +75,7 @@ class AiSignalJob implements ShouldQueue
         );
 
         if($signal->action == 'buy' && (float)$data['confidence'] >= 0.7) {
-            ExecuteAutoBuyJob::dispatch($signal->symbol, '5.0', $signal->reasoning);
+            ExecuteAutoBuyJob::dispatch($signal->symbol, '10.0', $signal->reasoning);
         }
     }
 
