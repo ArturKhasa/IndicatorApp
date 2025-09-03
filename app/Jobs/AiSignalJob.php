@@ -41,7 +41,7 @@ class AiSignalJob implements ShouldQueue
         $prompt = "Ты — аналитик по крипторынку. Дай краткую рекомендацию на основе технических фич. Ограничения:- Не фантазируй: используй только предоставленные данные.- Учитывай шум: не сигналь при смешанных сигналах (action=hold).Выведи только JSON по схеме. Фичи:{$this->pretty($this->features)}";
 
         $resp = $client->chat()->create([
-            'model' => 'gpt-5', // или актуальная модель
+            'model' => 'gpt-5-mini', // или актуальная модель
             'response_format' =>
                 ['type' => 'json_schema',
                     'json_schema' => [
