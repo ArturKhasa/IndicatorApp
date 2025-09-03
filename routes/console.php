@@ -11,5 +11,5 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 
-Schedule::command(TradeDispatcher::class)->everyThirtyMinutes();
-Schedule::job(new TradeMonitorJob())->everyTenMinutes();
+Schedule::command(TradeDispatcher::class)->hourly();
+Schedule::job(new TradeMonitorJob())->everyThirtyMinutes();
