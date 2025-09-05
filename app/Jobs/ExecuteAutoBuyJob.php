@@ -33,9 +33,16 @@ class ExecuteAutoBuyJob implements ShouldQueue
         // 1) Ставим маркет-покупку (qty = сумма в котировке)
         $orderLinkId = 'autobuy-'.Str::uuid()->toString();
         $resp = $bybit->placeSpotMarketBuy($this->symbol, $this->amountQuote, $orderLinkId);
-        if(isset($resp['retMsg']) && $resp['retMsg'] == 'Order value exceeded lower limit.') {
-            Log::channel('trade')->error('Слишком маленькая сделка в USDT для покупки');
+
+        $newAmount = $this->amountQuote;
+        while (isset($resp['retMsg']) && $resp['retMsg'] == 'Order value exceeded lower limit.') {
+            Log::channel('trade')->error("$this->symbol мало $newAmount");
+            $newAmount = (string)((float)$newAmount + 1.5);
+            $resp = $bybit->placeSpotMarketBuy($this->symbol, $newAmount, $orderLinkId);
         }
+//        if(isset($resp['retMsg']) && $resp['retMsg'] == 'Order value exceeded lower limit.') {
+//            Log::channel('trade')->error('Слишком маленькая сделка в USDT для покупки');
+//        }
         $orderId = (string)($resp['result']['orderId'] ?? '');
         // 2) Пуллим статус ордера/исполнения c backoff
         [$qtyBase, $avgPrice, $finalOrderId] = $this->waitForFills($bybit, $orderLinkId);

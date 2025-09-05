@@ -66,6 +66,7 @@ class BybitService
         ])->throw()->json();
 
         $list = $resp['result']['list'] ?? [];
+        $list = array_filter($list, fn($row) => str_ends_with($row['symbol'], 'USDT'));
 
         // сортируем по объёму 24ч
         usort($list, function ($a, $b) {
