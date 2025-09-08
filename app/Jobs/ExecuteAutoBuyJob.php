@@ -40,9 +40,11 @@ class ExecuteAutoBuyJob implements ShouldQueue
             $newAmount = (string)((float)$newAmount + 1.5);
             $resp = $bybit->placeSpotMarketBuy($this->symbol, $newAmount, $orderLinkId);
         }
-//        if(isset($resp['retMsg']) && $resp['retMsg'] == 'Order value exceeded lower limit.') {
-//            Log::channel('trade')->error('Слишком маленькая сделка в USDT для покупки');
-//        }
+
+        if($resp['retMsg'] != 'OK') {
+            Log::channel('trade')->error(print_r($resp, true));
+        }
+
         $orderId = (string)($resp['result']['orderId'] ?? '');
         // 2) Пуллим статус ордера/исполнения c backoff
         [$qtyBase, $avgPrice, $finalOrderId] = $this->waitForFills($bybit, $orderLinkId);

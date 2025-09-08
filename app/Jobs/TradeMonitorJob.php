@@ -94,10 +94,18 @@ class TradeMonitorJob implements ShouldQueue
                 // Готовим market sell на ВСЮ базовую позицию
                 $orderLinkId = 'autosell-'.Str::uuid()->toString();
 
-                // Округление количества можно сделать по lotSizeFilter (если хочешь, добавь сюда запрос instruments-info)
-                $baseQty = number_format((float)$t->qty_base, 8, '.', '');
+                $coinBalance = $bybit->getWalletCoin(str_replace('USDT', '', $t->symbol));
+                if($coinBalance) {
+                    $t->qty_base = $coinBalance;
+                }
+                $info = $bybit->getInstrumentInfo($t->symbol);
+                $minQty  = (string)($info['lotSizeFilter']['minOrderQty'] ?? '0');
+                $symbols = strlen(explode('.', $minQty)[1]); // 4
+                $baseQty = number_format((float)$t->qty_base, $symbols, '.', '');
                 $sellResp = $bybit->placeSpotMarketSell($t->symbol, $baseQty, $orderLinkId);
-
+                if($sellResp['retMsg'] != 'OK') {
+                    Log::channel('trade')->error(print_r($sellResp, true));
+                }
                 // Для простоты возьмём last как цену выхода (точную fill price можно вытянуть отдельным запросом)
                 $exitPrice = $last;
                 $pnlQuote  = ($exitPrice - (float)$t->price_entry) * (float)$t->qty_base;

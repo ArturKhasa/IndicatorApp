@@ -137,6 +137,25 @@ class BybitService
         return $resp;
     }
 
+    public function getWalletCoin(string $coin) : float | null
+    {
+        $ts = (int)(microtime(true) * 1000);
+        $query = ['accountType' => 'UNIFIED'];
+        $sign  = $this->signGet($query, $ts);
+
+        $resp = Http::withHeaders($this->headers($sign, $ts))
+            ->get($this->base.'/v5/account/wallet-balance', $query)
+            ->throw()->json();
+
+        foreach (($resp['result']['list'][0]['coin'] ?? []) as $row) {
+            if (strcasecmp($row['coin'], $coin) === 0) {
+                return $row['walletBalance'] ?? null; // здесь есть walletBalance/availableToTrade и т.д.
+            }
+        }
+        return null;
+    }
+
+
 
     /** Продажа SPOT MARKET BUY. qty — сумма в котируемой валюте (USDT). */
     public function placeSpotMarketSell(string $symbol, string $baseQty, ?string $orderLinkId = null): array
