@@ -68,7 +68,7 @@ class TradeMonitorJob implements ShouldQueue
             // 3) Строим промпт:
             $system = "Ты — трейдинг-ассистент. Отвечай только JSON согласно схеме. Правила:- Используй только переданные фичи и контекст.- Если сигналы слабые/противоречивые — HOLD.- Отвечай строго JSON по схеме.- Ориентируйся на примеры прибыльных сделок, если текущая ситуация похожа. $examples";
             $resp = $client->chat()->create([
-                'model' => 'gpt-5-mini',
+                'model' => 'gpt-5-nano',
                 'response_format' => [
                     'type' => 'json_schema',
                     'json_schema' => [
