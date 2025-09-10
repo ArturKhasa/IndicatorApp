@@ -101,10 +101,12 @@ class TradeMonitorJob implements ShouldQueue
                 $info = $bybit->getInstrumentInfo($t->symbol);
                 $minQty  = (string)($info['lotSizeFilter']['minOrderQty'] ?? '0');
                 $symbols = strlen(explode('.', $minQty)[1]); // 4
-                $baseQty = number_format((float)$t->qty_base, $symbols, '.', '');
+                $baseQty = $this->floorToDecimal($t->qty_base, $symbols);
                 $sellResp = $bybit->placeSpotMarketSell($t->symbol, $baseQty, $orderLinkId);
                 if($sellResp['retMsg'] != 'OK') {
-                    Log::channel('trade')->error(print_r($sellResp, true));
+                    $t->last_ai_comment = 'ОШИБКА ПРОДАЖИ -' . $sellResp['retMsg'];
+                    $t->save();
+                    return;
                 }
                 // Для простоты возьмём last как цену выхода (точную fill price можно вытянуть отдельным запросом)
                 $exitPrice = $last;
@@ -127,5 +129,10 @@ class TradeMonitorJob implements ShouldQueue
                 $t->save();
             }
         }
+    }
+
+    protected function floorToDecimal($number, $precision = 1) {
+        $factor = pow(10, $precision);
+        return floor($number * $factor) / $factor;
     }
 }
