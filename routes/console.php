@@ -12,4 +12,4 @@ Artisan::command('inspire', function () {
 
 
 Schedule::command(TradeDispatcher::class)->everyTwoHours();
-Schedule::job(new TradeMonitorJob())->hourly();
+Schedule::job(new TradeMonitorJob())->everyTwoHours();
