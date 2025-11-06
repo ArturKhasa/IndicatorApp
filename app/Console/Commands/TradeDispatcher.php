@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Http\Services\AiShortBotService;
 use App\Http\Services\BybitService;
 use App\Jobs\BuildFeaturesJob;
 use App\Models\Trade;
@@ -26,15 +27,24 @@ class TradeDispatcher extends Command
     /**
      * Execute the console command.
      */
-    public function handle(BybitService $bybitService)
+    public function handle(AiShortBotService $aiShortBotService, BybitService $bybitService)
     {
-        $coins = $bybitService->getTopByVolume(100);
+        $coins = $aiShortBotService->getShortCandidates(10);
         $trades = Trade::query()->where('status', 'open')->pluck('symbol')->toArray();
 
         $diff = array_diff($coins, $trades);
 
         foreach ($diff as $coin) {
-            BuildFeaturesJob::dispatch($coin);
+            Trade::query()->create([
+                'symbol'      => $coin['symbol'],
+                'side'        => 'Sell',
+                'leverage' =>  5,
+                'entry_price' => $bybitService->getLastPrice($coin['symbol']),
+                'qty'         => 100,
+                'status'      => 'open',
+                'opened_at'   => now(),
+                'source'      => 'ChatGPT',
+            ]);
         }
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Http\Services\AiShortBotService;
 use App\Http\Services\BybitService;
 use App\Jobs\BuildFeaturesJob;
 use App\Jobs\ExecuteAutoBuyJob;
@@ -30,6 +31,15 @@ class TestAiSignal extends Command
      */
     public function handle(BybitService $bybitService)
     {
+        $service = new AiShortBotService();
+        dd($service->getShortCandidates());
+//        $response = $bybitService->placeLinearShort('BTCUSDT', 0.001, 5);
+//        $response = $bybitService->closeLinearShort('BTCUSDT', 0.001);
+//        if ($response['retCode'] === 0) {
+//            echo "✅ Шорт открыт успешно!";
+//        } else {
+//            echo "❌ Ошибка: " . $response['retMsg'];
+//        }
 //        ExecuteAutoBuyJob::dispatchSync('RATSUSDT', '5.0', 'Тестовая');
     }
 }

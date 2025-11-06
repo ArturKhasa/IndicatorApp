@@ -226,4 +226,89 @@ class BybitService
 
         return $resp['result']['list'][0] ?? [];
     }
+
+
+    /**
+     * Открывает фьючерсный SHORT по рынку.
+     *
+     * @param string $symbol   Например 'BTCUSDT'
+     * @param float  $qty      Кол-во контрактов (например 0.001)
+     * @param float  $leverage Плечо (по умолчанию 5x)
+     * @param string|null $orderLinkId  Уникальный ID ордера (для трекинга)
+     * @return array Ответ API
+     */
+    public function placeLinearShort(string $symbol, float $qty, float $leverage = 5, ?string $orderLinkId = null): array
+    {
+        // 1️⃣ Получаем текущее время (в миллисекундах)
+        //    Это нужно для подписи запроса (Bybit проверяет "свежесть" запроса).
+        $ts = (int)(microtime(true) * 1000);
+
+        // 2️⃣ Формируем тело запроса для установки плеча.
+        //    На Bybit для каждой пары нужно указать buyLeverage и sellLeverage.
+        $leverageBody = [
+            'category' => 'linear',
+            'symbol' => $symbol,
+            'buyLeverage' => (string)$leverage,
+            'sellLeverage' => (string)$leverage,
+        ];
+
+        // 3️⃣ Создаём подпись для POST-запроса.
+        //    Это HMAC SHA256: timestamp + apiKey + recvWindow + jsonBody.
+        $leverageSign = $this->signPost($leverageBody, $ts);
+
+        // 4️⃣ Отправляем POST-запрос на установку плеча.
+        Http::withHeaders($this->headers($leverageSign, $ts))
+            ->post($this->base . '/v5/position/set-leverage', $leverageBody)
+            ->throw(); // если ошибка — Laravel выбросит исключение
+        // 5️⃣ Теперь создаём тело ордера для SHORT позиции.
+        $body = [
+            'category'    => 'linear',          // тип рынка
+            'symbol'      => $symbol,           // например BTCUSDT
+            'side'        => 'Sell',            // значит SHORT
+            'orderType'   => 'Market',          // рыночный ордер (сразу исполнится)
+            'qty'         => (string)$qty,      // объём контракта
+            'timeInForce' => 'GoodTillCancel',  // можно "ImmediateOrCancel"
+        ];
+
+        // 6️⃣ Если передали orderLinkId (уникальный ID ордера) — добавим.
+        //    Это удобно, чтобы потом искать ордер по этому ID.
+        if ($orderLinkId) {
+            $body['orderLinkId'] = $orderLinkId;
+        }
+
+        // 7️⃣ Повторно генерируем timestamp и подпись.
+        $ts   = (int)(microtime(true) * 1000);
+        $sign = $this->signPost($body, $ts);
+
+        // 8️⃣ Отправляем запрос на создание ордера (SHORT).
+        $resp = Http::withHeaders($this->headers($sign, $ts))
+            ->post($this->base . '/v5/order/create', $body)
+            ->throw()
+            ->json();
+
+        // 9️⃣ Возвращаем JSON-ответ от Bybit API.
+        return $resp;
+    }
+
+    public function closeLinearShort(string $symbol, float $qty): array
+    {
+        $body = [
+            'category'    => 'linear',
+            'symbol'      => $symbol,
+            'side'        => 'Buy',          // обратная операция: закрывает шорт
+            'orderType'   => 'Market',
+            'qty'         => (string)$qty,
+            'timeInForce' => 'GoodTillCancel',
+        ];
+
+        $ts   = (int)(microtime(true) * 1000);
+        $sign = $this->signPost($body, $ts);
+
+        $resp = Http::withHeaders($this->headers($sign, $ts))
+            ->post($this->base . '/v5/order/create', $body)
+            ->throw()
+            ->json();
+
+        return $resp;
+    }
 }

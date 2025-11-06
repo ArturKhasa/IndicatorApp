@@ -1,6 +1,7 @@
 <?php
 
 use App\Console\Commands\TradeDispatcher;
+use App\Console\Commands\UpdateTrades;
 use App\Jobs\TradeMonitorJob;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
@@ -11,5 +12,6 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 
-Schedule::command(TradeDispatcher::class)->daily();
-Schedule::job(new TradeMonitorJob())->daily();
+Schedule::command(TradeDispatcher::class)->everyTenMinutes();
+Schedule::command(UpdateTrades::class)->everyFiveMinutes();
+//Schedule::job(new TradeMonitorJob())->daily();
