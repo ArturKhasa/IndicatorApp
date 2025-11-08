@@ -29,7 +29,7 @@ class TradeDispatcher extends Command
      */
     public function handle(AiShortBotService $aiShortBotService, BybitService $bybitService)
     {
-        $coins = $aiShortBotService->getShortCandidates(10);
+        $coins = $aiShortBotService->getShortCandidates(100);
         $trades = Trade::query()->where('status', 'open')->pluck('symbol')->toArray();
 
         $diff = array_diff($coins, $trades);
