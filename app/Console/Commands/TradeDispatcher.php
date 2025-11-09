@@ -30,17 +30,21 @@ class TradeDispatcher extends Command
     public function handle(AiShortBotService $aiShortBotService, BybitService $bybitService)
     {
         $coins = $aiShortBotService->getShortCandidates(100);
+//        dd($bybitService->getLastPrice('USDTBTC'));
         $trades = Trade::query()->where('status', 'open')->pluck('symbol')->toArray();
+
 
         $diff = array_diff($coins, $trades);
 
         foreach ($diff as $coin) {
+            $qty = (1000 * 0.02 * 5) / $bybitService->getLastPrice($coin['symbol']);
+
             Trade::query()->create([
                 'symbol'      => $coin['symbol'],
                 'side'        => 'Sell',
                 'leverage' =>  5,
                 'entry_price' => $bybitService->getLastPrice($coin['symbol']),
-                'qty'         => 100,
+                'qty'         => round($qty, 1),
                 'status'      => 'open',
                 'opened_at'   => now(),
                 'source'      => 'ChatGPT',
