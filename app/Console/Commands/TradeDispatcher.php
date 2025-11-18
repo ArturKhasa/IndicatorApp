@@ -29,7 +29,7 @@ class TradeDispatcher extends Command
      */
     public function handle(AiShortBotService $aiShortBotService, BybitService $bybitService)
     {
-        $coins = $aiShortBotService->getShortCandidates(100);
+        $coins = $aiShortBotService->getShortCandidates(100, 20);
 //        dd($bybitService->getLastPrice('USDTBTC'));
         $trades = Trade::query()->where('status', 'open')->pluck('symbol')->toArray();
 
